@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import subprocess
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -10,19 +11,32 @@ from selenium.webdriver.support import expected_conditions as EC
 # 🚀 Logging für Debugging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# 📌 Verwende das vorinstallierte Chromium in Render
-chrome_path = "/usr/bin/chromium-browser"
-chromedriver_path = "/usr/bin/chromedriver"
+# 📌 Chromium & Chromedriver in /tmp/ speichern (da /opt/ gesperrt ist)
+chrome_path = "/tmp/chrome-linux64/chrome"
+chromedriver_path = "/tmp/chromedriver-linux64/chromedriver"
 
-# 🚀 Starte Selenium mit Chromium
+# 📌 Installiere eine portable Version von Chromium & Chromedriver
+if not os.path.exists(chrome_path):
+    logging.info("🔽 Lade portable Chromium herunter...")
+    subprocess.run("mkdir -p /tmp/chrome-linux64", shell=True, check=True)
+    subprocess.run("wget -q -O /tmp/chrome-linux64/chrome.zip https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.94/linux64/chrome-linux.zip", shell=True, check=True)
+    subprocess.run("unzip /tmp/chrome-linux64/chrome.zip -d /tmp/chrome-linux64/", shell=True, check=True)
+
+if not os.path.exists(chromedriver_path):
+    logging.info("🔽 Lade portable Chromedriver herunter...")
+    subprocess.run("mkdir -p /tmp/chromedriver-linux64", shell=True, check=True)
+    subprocess.run("wget -q -O /tmp/chromedriver-linux64/chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.94/linux64/chromedriver-linux64.zip", shell=True, check=True)
+    subprocess.run("unzip /tmp/chromedriver-linux64/chromedriver.zip -d /tmp/chromedriver-linux64/", shell=True, check=True)
+
+# 🚀 Starte Selenium mit Headless Chromium
 options = webdriver.ChromeOptions()
-options.binary_location = chrome_path
+options.binary_location = chrome_path  # Chrome-Pfad setzen
 options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
 
 driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
-logging.info("🚀 Selenium WebDriver mit Chromium gestartet!")
+logging.info("🚀 Selenium WebDriver mit Headless Chromium gestartet!")
 
 # 🚀 Teste, ob Google geladen werden kann
 driver.get("https://www.google.com")
