@@ -1,17 +1,29 @@
 import os
 import time
 import logging
+import subprocess  # ⬅️ WICHTIG! Notwendig für `subprocess.run`
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 
+# 📌 Temporärer Speicherort für Firefox (Railway erlaubt nur /tmp/)
+firefox_path = "/tmp/firefox/firefox"
+
+# 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
+if not os.path.exists(firefox_path):
+    print("🔽 Lade portable Firefox-Version herunter...")
+    subprocess.run("mkdir -p /tmp/firefox", shell=True, check=True)
+    subprocess.run("wget -q -O /tmp/firefox.tar.bz2 https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US", shell=True, check=True)
+    subprocess.run("tar xjf /tmp/firefox.tar.bz2 -C /tmp/firefox --strip-components=1", shell=True, check=True)
+
 # 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # 🚀 Firefox-Setup mit Geckodriver
 options = webdriver.FirefoxOptions()
+options.binary_location = firefox_path  # Setzt den Pfad zur portablen Firefox-Version
 options.add_argument("--headless")  # Kein GUI-Modus für Railway
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
@@ -25,6 +37,7 @@ logging.info("🚀 Selenium WebDriver mit Firefox erfolgreich gestartet!")
 # 🚀 Testseite laden
 driver.get("https://www.google.com")
 print("🌍 Google erfolgreich geladen!")
+
 
 
 # 🚀 RTX 5090 Produktlinks für verschiedene Shops
