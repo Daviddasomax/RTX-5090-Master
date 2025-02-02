@@ -1,8 +1,7 @@
 import time
 import os
 import logging
-import chromedriver_autoinstaller
-from selenium import webdriver
+import subprocess
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -12,21 +11,26 @@ from selenium.webdriver.support import expected_conditions as EC
 # 🚀 Logging für Debugging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# 🚀 Geckodriver automatisch installieren
-chromedriver_autoinstaller.install()
+# 🚀 Chromium & Chromedriver installieren, falls nicht vorhanden
+chrome_path = "/usr/bin/google-chrome"
+chrome_driver_path = "/usr/local/bin/chromedriver"
 
-# 🚀 Selenium mit Firefox (Headless Mode für Render)
+if not os.path.exists(chrome_path):
+    subprocess.run("wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb", shell=True, check=True)
+    subprocess.run("apt install -y /tmp/chrome.deb", shell=True, check=True)
+
+if not os.path.exists(chrome_driver_path):
+    subprocess.run("wget -q -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip", shell=True, check=True)
+    subprocess.run("unzip /tmp/chromedriver.zip -d /usr/local/bin/", shell=True, check=True)
+
+# 🚀 Selenium mit Chrome starten
 options = webdriver.ChromeOptions()
 options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
 
-try:
-    driver = webdriver.Chrome(options=options)
-    print("🚀 Selenium WebDriver mit Chrome gestartet!")
-except Exception as e:
-    logging.error(f"❌ Fehler beim Start von Selenium: {e}")
-    exit(1)
+driver = webdriver.Chrome(executable_path=chrome_driver_path, options=options)
+logging.info("🚀 Selenium WebDriver mit Chrome gestartet!")
 
 # 🚀 RTX 5090 Produktlinks für verschiedene Shops
 SHOPS = {
