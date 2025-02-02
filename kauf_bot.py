@@ -3,19 +3,17 @@ import time
 import logging
 import subprocess
 import requests
-import tarfile  # ⬅️ Python-Modul zum Entpacken ohne `bzip2`
+import tarfile
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 
 # 📌 Temporärer Speicherort für Firefox (Railway erlaubt nur /tmp/)
-firefox_path = "/tmp/firefox/firefox"
-firefox_archive = "/tmp/firefox.tar.bz2"
+firefox_dir = "/tmp/firefox"
+firefox_binary = os.path.join(firefox_dir, "firefox")
 
 # 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
-if not os.path.exists(firefox_path):
+if not os.path.exists(firefox_binary):
     print("🔽 Lade portable Firefox-Version herunter...")
 
     # 🔽 Lade Firefox mit requests herunter
@@ -23,20 +21,27 @@ if not os.path.exists(firefox_path):
     response = requests.get(firefox_url, allow_redirects=True)
 
     # 🔽 Speichere die Datei manuell
-    with open(firefox_archive, "wb") as file:
+    archive_path = "/tmp/firefox.tar.bz2"
+    with open(archive_path, "wb") as file:
         file.write(response.content)
 
-    # 🔽 Entpacke Firefox mit `tarfile` (ohne `bzip2`)
-    os.makedirs("/tmp/firefox", exist_ok=True)
-    with tarfile.open(firefox_archive, "r:bz2") as tar:
-        tar.extractall(path="/tmp/firefox")
+    # 🔽 Stelle sicher, dass das Zielverzeichnis existiert
+    os.makedirs(firefox_dir, exist_ok=True)
+
+    # 🔽 Entpacke Firefox sicher mit `tarfile`
+    with tarfile.open(archive_path, "r:bz2") as tar:
+        tar.extractall(path=firefox_dir)
+
+    # 🔽 Überprüfe, ob die Binärdatei existiert
+    if not os.path.exists(firefox_binary):
+        raise FileNotFoundError(f"❌ Firefox-Binary nicht gefunden in {firefox_binary}")
 
 # 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # 🚀 Firefox-Setup mit Geckodriver
 options = webdriver.FirefoxOptions()
-options.binary_location = firefox_path  # Setzt den Pfad zur portablen Firefox-Version
+options.binary_location = firefox_binary  # Setzt den Pfad zur portablen Firefox-Version
 options.add_argument("--headless")  # Kein GUI-Modus für Railway
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
@@ -50,6 +55,7 @@ logging.info("🚀 Selenium WebDriver mit Firefox erfolgreich gestartet!")
 # 🚀 Testseite laden
 driver.get("https://www.google.com")
 print("🌍 Google erfolgreich geladen!")
+
 
 
 
