@@ -1,7 +1,7 @@
 import os
 import time
 import logging
-import chromedriver_autoinstaller
+import subprocess
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -11,21 +11,36 @@ from selenium.webdriver.support import expected_conditions as EC
 # 🚀 Logging für Debugging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# 📌 Automatische Installation von Chrome & Chromedriver
-chromedriver_autoinstaller.install()
+# 📌 Installiere Headless Chromium (leichtere Chrome-Version)
+chrome_path = "/tmp/chrome-linux/chrome"
+chromedriver_path = "/tmp/chromedriver"
 
-# 🚀 Starte Selenium mit Headless Chrome
+if not os.path.exists(chrome_path):
+    logging.info("🔽 Lade Headless Chromium herunter...")
+    subprocess.run("mkdir -p /tmp/chrome-linux", shell=True, check=True)
+    subprocess.run("wget -q -O /tmp/chrome-linux/chrome.zip https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.94/linux64/chrome-linux.zip", shell=True, check=True)
+    subprocess.run("unzip /tmp/chrome-linux/chrome.zip -d /tmp/chrome-linux", shell=True, check=True)
+
+if not os.path.exists(chromedriver_path):
+    logging.info("🔽 Lade Chromedriver herunter...")
+    subprocess.run("wget -q -O /tmp/chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.94/linux64/chromedriver-linux64.zip", shell=True, check=True)
+    subprocess.run("unzip /tmp/chromedriver.zip -d /tmp/", shell=True, check=True)
+    subprocess.run("mv /tmp/chromedriver-linux64/chromedriver /tmp/chromedriver", shell=True, check=True)
+
+# 🚀 Starte Selenium mit Headless Chromium
 options = webdriver.ChromeOptions()
+options.binary_location = chrome_path
 options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
 
-driver = webdriver.Chrome(options=options)
-logging.info("🚀 Selenium WebDriver mit Headless Chrome gestartet!")
+driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+logging.info("🚀 Selenium WebDriver mit Headless Chromium gestartet!")
 
 # 🚀 Teste, ob Google geladen werden kann
 driver.get("https://www.google.com")
 print("🌍 Google erfolgreich geladen!")
+
 # 🚀 RTX 5090 Produktlinks für verschiedene Shops
 SHOPS = {
     "Caseking": "https://www.caseking.de/pc-komponenten/grafikkarten/nvidia/rtx-5000/geforce-rtx-5090",
