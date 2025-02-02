@@ -3,7 +3,7 @@ import time
 import logging
 import subprocess
 import requests
-import shutil
+import tarfile
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -16,8 +16,8 @@ chromium_binary = os.path.join(chromium_dir, "chrome-linux64", "chrome")
 if not os.path.exists(chromium_binary):
     print("🔽 Lade portable Chromium-Version herunter (Railway-kompatibel)...")
 
-    chromium_url = "https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.94/linux64/chrome-linux.zip"
-    archive_path = "/tmp/chrome-linux.zip"
+    chromium_url = "https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.94/linux64/chrome-linux.tar.xz"
+    archive_path = "/tmp/chrome-linux.tar.xz"
 
     # Lade Chromium von Google herunter
     response = requests.get(chromium_url, allow_redirects=True)
@@ -26,8 +26,9 @@ if not os.path.exists(chromium_binary):
 
     os.makedirs(chromium_dir, exist_ok=True)
 
-    # 📌 Verwende `shutil` anstelle von `unzip`
-    shutil.unpack_archive(archive_path, chromium_dir)
+    # 📌 Entpacke Chromium mit `tarfile`
+    with tarfile.open(archive_path, "r:xz") as tar:
+        tar.extractall(path=chromium_dir)
 
     # 📌 Setze Chromium als ausführbar
     subprocess.run(["chmod", "+x", chromium_binary], check=True)
@@ -64,6 +65,7 @@ try:
 except Exception as e:
     logging.error(f"❌ Fehler beim Starten von Chromium: {e}")
     raise e
+
 
 
 
