@@ -1,7 +1,7 @@
 import os
+import subprocess
 import time
 import logging
-import subprocess
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -11,15 +11,15 @@ from selenium.webdriver.support import expected_conditions as EC
 # 🚀 Logging für Debugging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# 📌 Chrome & Chromedriver manuell installieren (ohne `apt-get`)
-chrome_path = "/opt/google/chrome/google-chrome"
+# 📌 Installiere Chrome & Chromedriver manuell (ohne `apt-get`)
+chrome_path = "/opt/chrome/chrome"
 chromedriver_path = "/opt/chromedriver/chromedriver"
 
 if not os.path.exists(chrome_path):
     logging.info("🔽 Lade Chrome herunter...")
-    subprocess.run("mkdir -p /opt/google/chrome", shell=True, check=True)
-    subprocess.run("wget -q -O /opt/google/chrome/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb", shell=True, check=True)
-    subprocess.run("dpkg -x /opt/google/chrome/chrome.deb /opt/google/chrome/", shell=True, check=True)
+    subprocess.run("mkdir -p /opt/chrome", shell=True, check=True)
+    subprocess.run("wget -q -O /opt/chrome/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb", shell=True, check=True)
+    subprocess.run("dpkg -x /opt/chrome/chrome.deb /opt/chrome/", shell=True, check=True)
 
 if not os.path.exists(chromedriver_path):
     logging.info("🔽 Lade Chromedriver herunter...")
@@ -27,7 +27,7 @@ if not os.path.exists(chromedriver_path):
     subprocess.run("wget -q -O /opt/chromedriver/chromedriver.zip https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip", shell=True, check=True)
     subprocess.run("unzip /opt/chromedriver/chromedriver.zip -d /opt/chromedriver", shell=True, check=True)
 
-# 🚀 Selenium mit Headless Chrome starten
+# 🚀 Starte Selenium mit Headless Chrome
 options = webdriver.ChromeOptions()
 options.binary_location = chrome_path
 options.add_argument("--headless")
@@ -36,6 +36,10 @@ options.add_argument("--disable-gpu")
 
 driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
 logging.info("🚀 Selenium WebDriver mit Headless Chrome gestartet!")
+
+# 🚀 URL zum Testen
+driver.get("https://www.google.com")
+print("🌍 Google erfolgreich geladen!")
 
 # 🚀 RTX 5090 Produktlinks für verschiedene Shops
 SHOPS = {
