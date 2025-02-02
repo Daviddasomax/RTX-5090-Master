@@ -1,0 +1,63 @@
+import time
+import os
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+
+# 🚀 URLs der RTX 5090 auf Caseking, Proshop & Alza
+SHOPS = {
+    "Caseking": "https://www.caseking.de/rtx-5090-master",
+    "Proshop": "https://www.proshop.de/rtx-5090-master",
+    "Alza": "https://www.alza.de/rtx-5090-master"
+}
+
+# 🚀 Zugangsdaten (aus Render-Umgebungsvariablen)
+USER_EMAIL = os.getenv("USER_EMAIL")
+USER_PASSWORD = os.getenv("USER_PASSWORD")
+
+# 🚀 Selenium Setup (Headless Browser für Render)
+options = webdriver.ChromeOptions()
+options.add_argument("--headless")
+options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+
+driver = webdriver.Chrome(options=options)
+
+def check_and_buy():
+    for shop, url in SHOPS.items():
+        driver.get(url)
+        time.sleep(3)
+
+        try:
+            add_to_cart = driver.find_element(By.XPATH, "//button[contains(text(), 'In den Warenkorb')]")
+            add_to_cart.click()
+            print(f"✅ {shop}: RTX 5090 in den Warenkorb gelegt!")
+
+            time.sleep(2)
+            driver.get("https://www." + shop.lower() + "/checkout")
+
+            email_field = driver.find_element(By.ID, "email")
+            password_field = driver.find_element(By.ID, "password")
+
+            email_field.send_keys(USER_EMAIL)
+            password_field.send_keys(USER_PASSWORD)
+            password_field.send_keys(Keys.RETURN)
+
+            time.sleep(3)
+
+            confirm_order = driver.find_element(By.XPATH, "//button[contains(text(), 'Bestellung abschicken')]")
+            confirm_order.click()
+
+            print(f"🎉 {shop}: RTX 5090 wurde erfolgreich gekauft!")
+            return True
+
+        except Exception as e:
+            print(f"❌ {shop}: Nicht verfügbar ({e})")
+
+    return False
+
+while True:
+    if check_and_buy():
+        break
+    time.sleep(300)  # Alle 5 Minuten erneut prüfen
