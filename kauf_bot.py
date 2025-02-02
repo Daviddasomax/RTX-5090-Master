@@ -8,32 +8,16 @@ from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 
-# 📌 Temporäre Verzeichnisse für Firefox & GLIBC
+# 📌 Temporäre Verzeichnisse für Firefox
 firefox_dir = "/tmp/firefox"
 firefox_binary = os.path.join(firefox_dir, "firefox")
-glibc_dir = "/tmp/glibc"
-
-# 📌 Sicheres Entpacken für Python 3.14
-def safe_extract(tar, path):
-    """ Verhindert Path Traversal & nutzt das `filter`-Argument für Python 3.14 """
-    def is_within_directory(directory, target):
-        abs_directory = os.path.abspath(directory)
-        abs_target = os.path.abspath(target)
-        return os.path.commonprefix([abs_target, abs_directory]) == abs_directory
-
-    def safe_filter(member):
-        member_path = os.path.join(path, member.name)
-        if not is_within_directory(path, member_path):
-            raise Exception("Unsicherer tar-Pfad erkannt!")
-        return member
-
-    tar.extractall(path=path, members=[safe_filter(m) for m in tar.getmembers()])
 
 # 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
 if not os.path.exists(firefox_binary):
-    print("🔽 Lade portable Firefox-Version herunter...")
+    print("🔽 Lade statische Firefox-Version herunter (Railway-kompatibel)...")
 
-    firefox_url = "https://ftp.mozilla.org/pub/firefox/releases/122.0/linux-x86_64/en-US/firefox-122.0.tar.bz2"
+    # Statische Version von Firefox (keine Abhängigkeit zu `glibc`)
+    firefox_url = "https://ftp.mozilla.org/pub/firefox/releases/115.0esr/linux-x86_64/en-US/firefox-115.0esr.tar.bz2"
     response = requests.get(firefox_url, allow_redirects=True)
 
     archive_path = "/tmp/firefox.tar.bz2"
@@ -42,10 +26,11 @@ if not os.path.exists(firefox_binary):
 
     os.makedirs(firefox_dir, exist_ok=True)
 
+    # 📌 Entpacke Firefox ohne Python 3.14-Warnung
     with tarfile.open(archive_path, "r:bz2") as tar:
-        safe_extract(tar, firefox_dir)
+        tar.extractall(path=firefox_dir)
 
-    # 🔽 Suche nach der richtigen ausführbaren Firefox-Datei
+    # 📌 Suche nach der richtigen ausführbaren Firefox-Datei
     for root, dirs, files in os.walk(firefox_dir):
         if "firefox" in files:
             firefox_binary = os.path.join(root, "firefox")
@@ -58,32 +43,12 @@ if not os.path.exists(firefox_binary):
     if not os.access(firefox_binary, os.X_OK):
         raise PermissionError(f"❌ Firefox ist nicht ausführbar! `chmod +x {firefox_binary}` fehlgeschlagen!")
 
-# 📌 Falls GLIBC fehlt, lade eine stabilere Version (2.35) herunter
-if not os.path.exists(glibc_dir):
-    print("🔽 Lade portable GLIBC 2.35-Version herunter...")
-
-    glibc_url = "http://ftp.gnu.org/gnu/libc/glibc-2.35.tar.gz"
-    response = requests.get(glibc_url, allow_redirects=True)
-
-    glibc_archive = "/tmp/glibc.tar.gz"
-    with open(glibc_archive, "wb") as file:
-        file.write(response.content)
-
-    os.makedirs(glibc_dir, exist_ok=True)
-
-    with tarfile.open(glibc_archive, "r:gz") as tar:
-        safe_extract(tar, glibc_dir)
-
-# 🚀 Setze den `LD_LIBRARY_PATH`, um sicherzustellen, dass die richtige `glibc`-Version verwendet wird
-os.environ["LD_LIBRARY_PATH"] = f"{glibc_dir}/lib"
+# 🚀 Setze den `LD_LIBRARY_PATH`, falls nötig
+os.environ["LD_LIBRARY_PATH"] = f"{firefox_dir}/lib"
 
 # 🚀 Prüfe, ob Firefox korrekt installiert ist
 firefox_version = subprocess.run([firefox_binary, "--version"], capture_output=True, text=True).stdout.strip()
 logging.info(f"🔥 Installierte Firefox-Version: {firefox_version}")
-
-# 🚀 Prüfe, ob `glibc` funktioniert
-glibc_check = subprocess.run(["ldd", "--version"], capture_output=True, text=True).stdout.strip()
-logging.info(f"🔥 Installierte GLIBC-Version: {glibc_check}")
 
 # 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -108,6 +73,7 @@ try:
 except Exception as e:
     logging.error(f"❌ Fehler beim Starten von Firefox: {e}")
     raise e
+
 
 
 
