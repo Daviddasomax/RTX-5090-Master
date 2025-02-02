@@ -1,2 +1,2 @@
-import geckodriver_autoinstaller
-geckodriver_autoinstaller.install()
+selenium
+webdriver-manager
