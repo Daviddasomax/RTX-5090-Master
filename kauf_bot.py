@@ -28,24 +28,15 @@ if not os.path.exists(firefox_binary):
     # 🔽 Stelle sicher, dass das Zielverzeichnis existiert
     os.makedirs(firefox_dir, exist_ok=True)
 
-    # 🔽 Entpacke Firefox mit `tarfile` und setze explizit den `firefox`-Binary
+    # 🔽 Entpacke Firefox mit `tarfile`
     with tarfile.open(archive_path, "r:bz2") as tar:
-        def safe_extract(tar_obj, path):
-            """ Sicheres Extrahieren, um Path Traversal zu verhindern """
-            for member in tar_obj.getmembers():
-                member_path = os.path.join(path, member.name)
-                if not member_path.startswith(os.path.abspath(path)):
-                    raise Exception("Unsicherer tar-Pfad erkannt!")
-            tar_obj.extractall(path=path)
-
-        safe_extract(tar, firefox_dir)
+        tar.extractall(path=firefox_dir)
 
     # 🔽 Suche nach der richtigen ausführbaren Firefox-Datei
     for root, dirs, files in os.walk(firefox_dir):
-        for file in files:
-            if file == "firefox":
-                firefox_binary = os.path.join(root, file)
-                break
+        if "firefox" in files:
+            firefox_binary = os.path.join(root, "firefox")
+            break
 
     # 🔽 Setze Firefox als ausführbar (WICHTIG für Railway)
     subprocess.run(["chmod", "+x", firefox_binary], check=True)
@@ -55,6 +46,13 @@ if not os.path.exists(firefox_binary):
         raise FileNotFoundError(f"❌ Firefox-Binary nicht gefunden in {firefox_binary}")
     if not os.access(firefox_binary, os.X_OK):
         raise PermissionError(f"❌ Firefox ist nicht ausführbar! `chmod +x {firefox_binary}` fehlgeschlagen!")
+
+# 🚀 Prüfe, ob Firefox korrekt installiert ist
+firefox_version = subprocess.run([firefox_binary, "--version"], capture_output=True, text=True).stdout.strip()
+logging.info(f"🔥 Installierte Firefox-Version: {firefox_version}")
+
+# 🚀 Installiere fehlende Abhängigkeiten (z. B. libgtk, libasound2)
+subprocess.run("apt-get update && apt-get install -y libgtk-3-0 libx11-xcb1 libdbus-glib-1-2 libasound2", shell=True, check=False)
 
 # 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -68,13 +66,17 @@ options.add_argument("--disable-gpu")
 
 # WebDriver initialisieren
 service = Service(GeckoDriverManager().install())
-driver = webdriver.Firefox(service=service, options=options)
 
-logging.info(f"🚀 Selenium WebDriver mit Firefox gestartet! (Pfad: {firefox_binary})")
+try:
+    driver = webdriver.Firefox(service=service, options=options)
+    logging.info(f"🚀 Selenium WebDriver mit Firefox gestartet! (Pfad: {firefox_binary})")
 
-# 🚀 Testseite laden
-driver.get("https://www.google.com")
-print("🌍 Google erfolgreich geladen!")
+    # 🚀 Testseite laden
+    driver.get("https://www.google.com")
+    print("🌍 Google erfolgreich geladen!")
+except Exception as e:
+    logging.error(f"❌ Fehler beim Starten von Firefox: {e}")
+    raise e
 
 
 
