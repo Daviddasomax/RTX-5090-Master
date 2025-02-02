@@ -8,7 +8,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# 🚀 Logging für Debugging
+# 🚀 Logging für Debugginga
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # 📌 Chromium & Chromedriver in /tmp/ speichern (da /opt/ gesperrt ist)
