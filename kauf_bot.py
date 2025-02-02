@@ -10,7 +10,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 
 # 📌 Temporäre Verzeichnisse
 firefox_dir = "/tmp/firefox"
-firefox_binary = os.path.join(firefox_dir, "firefox")  # Richtiger Pfad
+firefox_binary = os.path.join(firefox_dir, "firefox")
 
 # 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
 if not os.path.exists(firefox_binary):
@@ -30,20 +30,31 @@ if not os.path.exists(firefox_binary):
 
     # 🔽 Entpacke Firefox mit `tarfile` und setze explizit den `firefox`-Binary
     with tarfile.open(archive_path, "r:bz2") as tar:
-        tar.extractall(path=firefox_dir)
+        def safe_extract(tar_obj, path):
+            """ Sicheres Extrahieren, um Path Traversal zu verhindern """
+            for member in tar_obj.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not member_path.startswith(os.path.abspath(path)):
+                    raise Exception("Unsicherer tar-Pfad erkannt!")
+            tar_obj.extractall(path=path)
 
-    # 🔽 Suche die ausführbare Datei (Firefox liegt in einem Unterordner)
+        safe_extract(tar, firefox_dir)
+
+    # 🔽 Suche nach der richtigen ausführbaren Firefox-Datei
     for root, dirs, files in os.walk(firefox_dir):
-        if "firefox" in files:
-            firefox_binary = os.path.join(root, "firefox")
-            break
+        for file in files:
+            if file == "firefox":
+                firefox_binary = os.path.join(root, file)
+                break
 
     # 🔽 Setze Firefox als ausführbar (WICHTIG für Railway)
     subprocess.run(["chmod", "+x", firefox_binary], check=True)
 
-    # 🔽 Überprüfe, ob die Datei existiert
+    # 🔽 Überprüfe, ob die Datei existiert & ausführbar ist
     if not os.path.exists(firefox_binary):
         raise FileNotFoundError(f"❌ Firefox-Binary nicht gefunden in {firefox_binary}")
+    if not os.access(firefox_binary, os.X_OK):
+        raise PermissionError(f"❌ Firefox ist nicht ausführbar! `chmod +x {firefox_binary}` fehlgeschlagen!")
 
 # 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -59,7 +70,7 @@ options.add_argument("--disable-gpu")
 service = Service(GeckoDriverManager().install())
 driver = webdriver.Firefox(service=service, options=options)
 
-logging.info("🚀 Selenium WebDriver mit Firefox erfolgreich gestartet!")
+logging.info(f"🚀 Selenium WebDriver mit Firefox gestartet! (Pfad: {firefox_binary})")
 
 # 🚀 Testseite laden
 driver.get("https://www.google.com")
