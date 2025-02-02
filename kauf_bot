@@ -1,8 +1,22 @@
 import time
 import os
+import geckodriver_autoinstaller  # Automatische Installation von Geckodriver
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+
+# 🚀 Geckodriver automatisch installieren
+geckodriver_autoinstaller.install()
+
+# 🚀 Selenium mit Firefox (Headless Mode)
+options = webdriver.FirefoxOptions()
+options.add_argument("--headless")  # Kein GUI-Modus für Render
+options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
+
+driver = webdriver.Firefox(options=options)
+
+print("🚀 Selenium WebDriver mit Firefox gestartet!")
 
 # 🚀 URLs der RTX 5090 auf Caseking, Proshop & Alza
 SHOPS = {
