@@ -1,7 +1,8 @@
 import time
 import os
 import logging
-import geckodriver_autoinstaller
+import chromedriver_autoinstaller
+from selenium import webdriver
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -12,17 +13,17 @@ from selenium.webdriver.support import expected_conditions as EC
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # 🚀 Geckodriver automatisch installieren
-geckodriver_autoinstaller.install()
+chromedriver_autoinstaller.install()
 
 # 🚀 Selenium mit Firefox (Headless Mode für Render)
-options = webdriver.FirefoxOptions()
+options = webdriver.ChromeOptions()
 options.add_argument("--headless")
-options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
+options.add_argument("--disable-gpu")
 
 try:
-    driver = webdriver.Firefox(options=options)
-    logging.info("🚀 Selenium WebDriver mit Firefox gestartet!")
+    driver = webdriver.Chrome(options=options)
+    print("🚀 Selenium WebDriver mit Chrome gestartet!")
 except Exception as e:
     logging.error(f"❌ Fehler beim Start von Selenium: {e}")
     exit(1)
