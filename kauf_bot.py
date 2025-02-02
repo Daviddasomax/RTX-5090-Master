@@ -5,74 +5,66 @@ import subprocess
 import requests
 import tarfile
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
-from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
-# 📌 Temporäre Verzeichnisse für Firefox
-firefox_dir = "/tmp/firefox"
-firefox_binary = os.path.join(firefox_dir, "firefox")
+# 📌 Temporäre Verzeichnisse für Chromium
+chromium_dir = "/tmp/chromium"
+chromium_binary = os.path.join(chromium_dir, "chrome")
 
-# 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
-if not os.path.exists(firefox_binary):
-    print("🔽 Lade statische Firefox-Version herunter (Railway-kompatibel)...")
+# 📌 Falls Chromium noch nicht vorhanden ist, herunterladen und entpacken
+if not os.path.exists(chromium_binary):
+    print("🔽 Lade portable Chromium-Version herunter (Railway-kompatibel)...")
 
-    # Statische Version von Firefox (keine Abhängigkeit zu `glibc`)
-    firefox_url = "https://ftp.mozilla.org/pub/firefox/releases/115.0esr/linux-x86_64/en-US/firefox-115.0esr.tar.bz2"
-    response = requests.get(firefox_url, allow_redirects=True)
+    chromium_url = "https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.94/linux64/chrome-linux.zip"
+    response = requests.get(chromium_url, allow_redirects=True)
 
-    archive_path = "/tmp/firefox.tar.bz2"
+    archive_path = "/tmp/chrome-linux.zip"
     with open(archive_path, "wb") as file:
         file.write(response.content)
 
-    os.makedirs(firefox_dir, exist_ok=True)
+    os.makedirs(chromium_dir, exist_ok=True)
 
-    # 📌 Entpacke Firefox ohne Python 3.14-Warnung
-    with tarfile.open(archive_path, "r:bz2") as tar:
-        tar.extractall(path=firefox_dir)
+    # 📌 Entpacke Chromium
+    subprocess.run(["unzip", archive_path, "-d", chromium_dir], check=True)
 
-    # 📌 Suche nach der richtigen ausführbaren Firefox-Datei
-    for root, dirs, files in os.walk(firefox_dir):
-        if "firefox" in files:
-            firefox_binary = os.path.join(root, "firefox")
-            break
+    # 📌 Setze Chromium als ausführbar
+    subprocess.run(["chmod", "+x", os.path.join(chromium_dir, "chrome-linux64", "chrome")], check=True)
+    chromium_binary = os.path.join(chromium_dir, "chrome-linux64", "chrome")
 
-    subprocess.run(["chmod", "+x", firefox_binary], check=True)
+    if not os.path.exists(chromium_binary):
+        raise FileNotFoundError(f"❌ Chromium-Binary nicht gefunden in {chromium_binary}")
+    if not os.access(chromium_binary, os.X_OK):
+        raise PermissionError(f"❌ Chromium ist nicht ausführbar! `chmod +x {chromium_binary}` fehlgeschlagen!")
 
-    if not os.path.exists(firefox_binary):
-        raise FileNotFoundError(f"❌ Firefox-Binary nicht gefunden in {firefox_binary}")
-    if not os.access(firefox_binary, os.X_OK):
-        raise PermissionError(f"❌ Firefox ist nicht ausführbar! `chmod +x {firefox_binary}` fehlgeschlagen!")
-
-# 🚀 Setze den `LD_LIBRARY_PATH`, falls nötig
-os.environ["LD_LIBRARY_PATH"] = f"{firefox_dir}/lib"
-
-# 🚀 Prüfe, ob Firefox korrekt installiert ist
-firefox_version = subprocess.run([firefox_binary, "--version"], capture_output=True, text=True).stdout.strip()
-logging.info(f"🔥 Installierte Firefox-Version: {firefox_version}")
+# 🚀 Prüfe, ob Chromium korrekt installiert ist
+chromium_version = subprocess.run([chromium_binary, "--version"], capture_output=True, text=True).stdout.strip()
+logging.info(f"🔥 Installierte Chromium-Version: {chromium_version}")
 
 # 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# 🚀 Firefox-Setup mit Geckodriver
-options = webdriver.FirefoxOptions()
-options.binary_location = firefox_binary  # Setzt den Pfad zur richtigen Firefox-Binärdatei
+# 🚀 Chromium-Setup mit Selenium
+options = webdriver.ChromeOptions()
+options.binary_location = chromium_binary  # Setzt den Pfad zur richtigen Chromium-Binärdatei
 options.add_argument("--headless")  # Kein GUI-Modus für Railway
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
 
 # WebDriver initialisieren
-service = Service(GeckoDriverManager().install())
+service = Service(ChromeDriverManager().install())
 
 try:
-    driver = webdriver.Firefox(service=service, options=options)
-    logging.info(f"🚀 Selenium WebDriver mit Firefox gestartet! (Pfad: {firefox_binary})")
+    driver = webdriver.Chrome(service=service, options=options)
+    logging.info(f"🚀 Selenium WebDriver mit Chromium gestartet! (Pfad: {chromium_binary})")
 
     # 🚀 Testseite laden
     driver.get("https://www.google.com")
     print("🌍 Google erfolgreich geladen!")
 except Exception as e:
-    logging.error(f"❌ Fehler beim Starten von Firefox: {e}")
+    logging.error(f"❌ Fehler beim Starten von Chromium: {e}")
     raise e
+
 
 
 
