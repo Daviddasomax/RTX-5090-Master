@@ -4,25 +4,28 @@ import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.firefox.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
 
-# 🚀 Logging für Debugging
+# 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# 🚀 Automatische Installation von ChromeDriver
-options = webdriver.ChromeOptions()
+# 🚀 Firefox-Setup mit Geckodriver
+options = webdriver.FirefoxOptions()
 options.add_argument("--headless")  # Kein GUI-Modus für Railway
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
 
-driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
-logging.info("🚀 Selenium WebDriver mit Chrome gestartet!")
+# WebDriver initialisieren
+service = Service(GeckoDriverManager().install())
+driver = webdriver.Firefox(service=service, options=options)
+
+logging.info("🚀 Selenium WebDriver mit Firefox erfolgreich gestartet!")
 
 # 🚀 Testseite laden
 driver.get("https://www.google.com")
 print("🌍 Google erfolgreich geladen!")
+
 
 # 🚀 RTX 5090 Produktlinks für verschiedene Shops
 SHOPS = {
