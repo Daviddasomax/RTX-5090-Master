@@ -10,7 +10,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 
 # 📌 Temporäre Verzeichnisse
 firefox_dir = "/tmp/firefox"
-firefox_binary = os.path.join(firefox_dir, "firefox-bin")  # Richtige ausführbare Datei
+firefox_binary = os.path.join(firefox_dir, "firefox")  # Richtiger Pfad
 
 # 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
 if not os.path.exists(firefox_binary):
@@ -28,18 +28,20 @@ if not os.path.exists(firefox_binary):
     # 🔽 Stelle sicher, dass das Zielverzeichnis existiert
     os.makedirs(firefox_dir, exist_ok=True)
 
-    # 🔽 Entpacke Firefox sicher mit `tarfile`
+    # 🔽 Entpacke Firefox mit `tarfile` und setze explizit den `firefox`-Binary
     with tarfile.open(archive_path, "r:bz2") as tar:
         tar.extractall(path=firefox_dir)
 
-    # 🔽 Suche die echte ausführbare Firefox-Datei (manchmal liegt sie in Unterordnern)
-    extracted_files = os.listdir(firefox_dir)
-    for filename in extracted_files:
-        if "firefox" in filename and not filename.endswith(".so"):
-            os.rename(os.path.join(firefox_dir, filename), firefox_binary)
+    # 🔽 Suche die ausführbare Datei (Firefox liegt in einem Unterordner)
+    for root, dirs, files in os.walk(firefox_dir):
+        if "firefox" in files:
+            firefox_binary = os.path.join(root, "firefox")
             break
 
-    # 🔽 Überprüfe, ob die Binärdatei existiert
+    # 🔽 Setze Firefox als ausführbar (WICHTIG für Railway)
+    subprocess.run(["chmod", "+x", firefox_binary], check=True)
+
+    # 🔽 Überprüfe, ob die Datei existiert
     if not os.path.exists(firefox_binary):
         raise FileNotFoundError(f"❌ Firefox-Binary nicht gefunden in {firefox_binary}")
 
