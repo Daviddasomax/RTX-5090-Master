@@ -1,7 +1,8 @@
 import os
 import time
 import logging
-import subprocess  # ⬅️ WICHTIG! Notwendig für `subprocess.run`
+import subprocess
+import requests  # ⬅️ WICHTIG: Nutze requests statt wget
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -14,8 +15,17 @@ firefox_path = "/tmp/firefox/firefox"
 # 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
 if not os.path.exists(firefox_path):
     print("🔽 Lade portable Firefox-Version herunter...")
+    
+    # 🔽 Lade Firefox mit requests herunter (statt wget)
+    firefox_url = "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"
+    response = requests.get(firefox_url, allow_redirects=True)
+    
+    # 🔽 Speichere die Datei manuell
+    with open("/tmp/firefox.tar.bz2", "wb") as file:
+        file.write(response.content)
+    
+    # 🔽 Entpacke Firefox in /tmp/firefox/
     subprocess.run("mkdir -p /tmp/firefox", shell=True, check=True)
-    subprocess.run("wget -q -O /tmp/firefox.tar.bz2 https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US", shell=True, check=True)
     subprocess.run("tar xjf /tmp/firefox.tar.bz2 -C /tmp/firefox --strip-components=1", shell=True, check=True)
 
 # 🚀 Logging aktivieren
