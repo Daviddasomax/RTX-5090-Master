@@ -8,9 +8,9 @@ from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 
-# 📌 Temporärer Speicherort für Firefox (Railway erlaubt nur /tmp/)
+# 📌 Temporäre Verzeichnisse
 firefox_dir = "/tmp/firefox"
-firefox_binary = os.path.join(firefox_dir, "firefox")
+firefox_binary = os.path.join(firefox_dir, "firefox-bin")  # Richtige ausführbare Datei
 
 # 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
 if not os.path.exists(firefox_binary):
@@ -32,6 +32,13 @@ if not os.path.exists(firefox_binary):
     with tarfile.open(archive_path, "r:bz2") as tar:
         tar.extractall(path=firefox_dir)
 
+    # 🔽 Suche die echte ausführbare Firefox-Datei (manchmal liegt sie in Unterordnern)
+    extracted_files = os.listdir(firefox_dir)
+    for filename in extracted_files:
+        if "firefox" in filename and not filename.endswith(".so"):
+            os.rename(os.path.join(firefox_dir, filename), firefox_binary)
+            break
+
     # 🔽 Überprüfe, ob die Binärdatei existiert
     if not os.path.exists(firefox_binary):
         raise FileNotFoundError(f"❌ Firefox-Binary nicht gefunden in {firefox_binary}")
@@ -41,7 +48,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 # 🚀 Firefox-Setup mit Geckodriver
 options = webdriver.FirefoxOptions()
-options.binary_location = firefox_binary  # Setzt den Pfad zur portablen Firefox-Version
+options.binary_location = firefox_binary  # Setzt den Pfad zur richtigen Firefox-Binärdatei
 options.add_argument("--headless")  # Kein GUI-Modus für Railway
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
