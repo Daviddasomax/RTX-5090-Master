@@ -8,16 +8,17 @@ from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 
-# 📌 Temporäre Verzeichnisse
+# 📌 Temporäre Verzeichnisse für Firefox & glibc
 firefox_dir = "/tmp/firefox"
 firefox_binary = os.path.join(firefox_dir, "firefox")
+glibc_dir = "/tmp/glibc"
 
 # 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
 if not os.path.exists(firefox_binary):
     print("🔽 Lade portable Firefox-Version herunter...")
 
-    # 🔽 Lade Firefox mit requests herunter
-    firefox_url = "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"
+    # 🔽 Lade eine GLIBC-kompatible Firefox-Version herunter (keine Standard-Version)
+    firefox_url = "https://ftp.mozilla.org/pub/firefox/releases/122.0/linux-x86_64/en-US/firefox-122.0.tar.bz2"
     response = requests.get(firefox_url, allow_redirects=True)
 
     # 🔽 Speichere die Datei manuell
@@ -47,12 +48,32 @@ if not os.path.exists(firefox_binary):
     if not os.access(firefox_binary, os.X_OK):
         raise PermissionError(f"❌ Firefox ist nicht ausführbar! `chmod +x {firefox_binary}` fehlgeschlagen!")
 
+# 📌 Falls GLIBC fehlt, lade sie herunter
+if not os.path.exists(glibc_dir):
+    print("🔽 Lade portable GLIBC-Version herunter...")
+
+    # 🔽 Lade GLIBC 2.38 herunter
+    glibc_url = "https://ftp.gnu.org/gnu/libc/glibc-2.38.tar.gz"
+    response = requests.get(glibc_url, allow_redirects=True)
+
+    # 🔽 Speichere die Datei manuell
+    glibc_archive = "/tmp/glibc.tar.gz"
+    with open(glibc_archive, "wb") as file:
+        file.write(response.content)
+
+    # 🔽 Stelle sicher, dass das Zielverzeichnis existiert
+    os.makedirs(glibc_dir, exist_ok=True)
+
+    # 🔽 Entpacke GLIBC mit `tarfile`
+    with tarfile.open(glibc_archive, "r:gz") as tar:
+        tar.extractall(path=glibc_dir)
+
+# 🚀 Setze den `LD_LIBRARY_PATH`, um die richtige `glibc`-Version zu verwenden
+os.environ["LD_LIBRARY_PATH"] = f"{glibc_dir}/lib"
+
 # 🚀 Prüfe, ob Firefox korrekt installiert ist
 firefox_version = subprocess.run([firefox_binary, "--version"], capture_output=True, text=True).stdout.strip()
 logging.info(f"🔥 Installierte Firefox-Version: {firefox_version}")
-
-# 🚀 Installiere fehlende Abhängigkeiten (z. B. libgtk, libasound2)
-subprocess.run("apt-get update && apt-get install -y libgtk-3-0 libx11-xcb1 libdbus-glib-1-2 libasound2", shell=True, check=False)
 
 # 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -77,9 +98,6 @@ try:
 except Exception as e:
     logging.error(f"❌ Fehler beim Starten von Firefox: {e}")
     raise e
-
-
-
 
 
 # 🚀 RTX 5090 Produktlinks für verschiedene Shops
