@@ -2,7 +2,8 @@ import os
 import time
 import logging
 import subprocess
-import requests  # ⬅️ WICHTIG: Nutze requests statt wget
+import requests
+import tarfile  # ⬅️ Python-Modul zum Entpacken ohne `bzip2`
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -11,22 +12,24 @@ from webdriver_manager.firefox import GeckoDriverManager
 
 # 📌 Temporärer Speicherort für Firefox (Railway erlaubt nur /tmp/)
 firefox_path = "/tmp/firefox/firefox"
+firefox_archive = "/tmp/firefox.tar.bz2"
 
 # 📌 Falls Firefox noch nicht vorhanden ist, herunterladen und entpacken
 if not os.path.exists(firefox_path):
     print("🔽 Lade portable Firefox-Version herunter...")
-    
-    # 🔽 Lade Firefox mit requests herunter (statt wget)
+
+    # 🔽 Lade Firefox mit requests herunter
     firefox_url = "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"
     response = requests.get(firefox_url, allow_redirects=True)
-    
+
     # 🔽 Speichere die Datei manuell
-    with open("/tmp/firefox.tar.bz2", "wb") as file:
+    with open(firefox_archive, "wb") as file:
         file.write(response.content)
-    
-    # 🔽 Entpacke Firefox in /tmp/firefox/
-    subprocess.run("mkdir -p /tmp/firefox", shell=True, check=True)
-    subprocess.run("tar xjf /tmp/firefox.tar.bz2 -C /tmp/firefox --strip-components=1", shell=True, check=True)
+
+    # 🔽 Entpacke Firefox mit `tarfile` (ohne `bzip2`)
+    os.makedirs("/tmp/firefox", exist_ok=True)
+    with tarfile.open(firefox_archive, "r:bz2") as tar:
+        tar.extractall(path="/tmp/firefox")
 
 # 🚀 Logging aktivieren
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -47,6 +50,7 @@ logging.info("🚀 Selenium WebDriver mit Firefox erfolgreich gestartet!")
 # 🚀 Testseite laden
 driver.get("https://www.google.com")
 print("🌍 Google erfolgreich geladen!")
+
 
 
 
