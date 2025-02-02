@@ -1,2 +1,2 @@
 selenium
-geckodriver-autoinstaller
+chromedriver-autoinstaller
