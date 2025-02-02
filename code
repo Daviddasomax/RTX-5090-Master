@@ -15,14 +15,13 @@ SHOPS = {
 USER_EMAIL = os.getenv("USER_EMAIL")
 USER_PASSWORD = os.getenv("USER_PASSWORD")
 
-# 🚀 Selenium Setup (Headless Browser für Render)
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")
+# 🚀 Selenium Setup für Firefox (Geckodriver statt Chromedriver)
+options = webdriver.FirefoxOptions()
+options.add_argument("--headless")  # Kein GUI-Modus für Render
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
 
-driver = webdriver.Chrome(options=options)
+driver = webdriver.Firefox(options=options)
 
 def check_and_buy():
     for shop, url in SHOPS.items():
